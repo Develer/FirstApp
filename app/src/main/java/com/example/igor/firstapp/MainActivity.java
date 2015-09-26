@@ -2,6 +2,7 @@ package com.example.igor.firstapp;
 
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.StrictMode;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,11 +19,14 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,38 +59,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void buttonOnClick(View v) throws IOException {
-        URL url = new URL("http://192.168.1.149:8011/igor");
-        HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
+        Button button=(Button) v;
+        ((Button) v).setText(get("http://192.168.1.149:8011/igor"));
+    }
+
+    public static String get(String from) {
         try {
-            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-            String response = readStream(in);
-            Button button=(Button) v;
-            ((Button) v).setText(response);
+            HttpClient client = new DefaultHttpClient();
+            HttpGet get = new HttpGet(from);
+            HttpResponse responseGet = client.execute(get);
+            HttpEntity resEntityGet = responseGet.getEntity();
+            if (resEntityGet != null) return EntityUtils.toString(resEntityGet);
+        } catch (Exception e) {
+            Log.e("GET", e.toString());
         }
-        finally {
-            urlConnection.disconnect();
-        }
+        return null;
     }
 
-    private String readStream(InputStream in) throws IOException {
-        BufferedReader r = new BufferedReader(new InputStreamReader(in));
-        StringBuilder total = new StringBuilder();
-        String line;
-        while ((line = r.readLine()) != null) {
-            total.append(line);
-        }
-        return total.toString();
-    }
-
-        private static String convertInputStreamToString(InputStream inputStream) throws IOException{
-            BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(inputStream));
-            String line = "";
-            String result = "";
-            while((line = bufferedReader.readLine()) != null)
-                result += line;
-            inputStream.close();
-            return result;
-
-        }
 
 }
